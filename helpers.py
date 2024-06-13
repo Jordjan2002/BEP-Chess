@@ -3,7 +3,6 @@ import random
 import numpy as np
 import copy
 
-
 def custom_reset(self, Fen):
     'creates the position of the given Fen, so can be used to create a custom position'
     self._board = chess.Board(Fen)
@@ -13,7 +12,6 @@ def custom_reset(self, Fen):
 
 def custom_step(self, action: chess.Move):
 
-
     if action not in self._board.legal_moves and not chess.Move.null():
         raise ValueError(
             f"Illegal move {action} for board position {self._board.fen()}"
@@ -22,7 +20,7 @@ def custom_step(self, action: chess.Move):
     self._board.push(action)
 
     observation = self._observation()
-    #reward = self._reward()
+    reward = self._reward()
 
 ########################################################
 
@@ -38,8 +36,6 @@ def custom_step(self, action: chess.Move):
             reward = 50
         elif obs.is_stalemate():
             reward = -50
-        # elif obs.is_repetition(count=2):
-        #     reward = -20
         else:
             reward = -1 #-1
 
@@ -224,7 +220,7 @@ def rep_to_move(repr:int, current_position, env):
         new_rank, new_file = rank+d_rank, file+d_file
         new_square = chess.square(new_file, new_rank)
 
-        if 0 <= new_square <= 62: # check if new_square is on the board
+        if 0 <= new_square <= 63: # check if new_square is on the board
             move = chess.Move(king_position, new_square)
             if move in env.legal_moves:
                 return move, True
@@ -246,7 +242,7 @@ def rep_to_move(repr:int, current_position, env):
         new_rank, new_file = rank+d_rank, file+d_file
         new_square = chess.square(new_file, new_rank)
         
-        if 0 <= new_square <= 62: # check if new_square is on the board
+        if 0 <= new_square <= 63: # check if new_square is on the board
             move = chess.Move(rook_position, new_square)
             if move in env.legal_moves: # so if move within the board and legal
                 return move, True
@@ -299,7 +295,6 @@ def custom_step_DQN(self, action: chess.Move):
 
     obs = self._observation() # board position
     if obs.turn: # then black made the last move
-        print('ERROR')
         if obs.is_insufficient_material(): # if black has captured the rook
             reward = 40
         else:
@@ -310,19 +305,19 @@ def custom_step_DQN(self, action: chess.Move):
             reward = 1000
         elif obs.is_stalemate():
             reward = -1000
-        # else:
-            
-        #     # moves_black = self.legal_moves
-        #     # if sum([obs.is_capture(move) for move in moves_black]) >= 1: # if black can legally capture the rook
-        #     #     reward = -1000
-
         else:
-            reward = -1
-            # position = obs.piece_map()
-            # pos = {v: k for k, v in position.items()}
-            # white_king_square = pos[chess.Piece.from_symbol('K')]
-            # black_king_square = pos[chess.Piece.from_symbol('k')]
-            # reward = (8-len(moves_black)) + (7-chess.square_distance(black_king_square, white_king_square))
+            
+            moves_black = self.legal_moves
+            if sum([obs.is_capture(move) for move in moves_black]) >= 1: # if black can legally capture the rook
+                reward = -1000
+
+            else:
+                reward = -1
+                # position = obs.piece_map()
+                # pos = {v: k for k, v in position.items()}
+                # white_king_square = pos[chess.Piece.from_symbol('K')]
+                # black_king_square = pos[chess.Piece.from_symbol('k')]
+                # reward = (8-len(moves_black)) + (7-chess.square_distance(black_king_square, white_king_square))
 
 
 #######################################################
@@ -510,7 +505,7 @@ def king_distance_reward(env):
         white_king_file = chess.square_file(white_king_square)
         white_king_rank = chess.square_rank(white_king_square)
 
-        center_squares = [(3,3),(3,4),(4,3),(4,4)]
+        center_squares = [(4,4),(4,5),(5,4),(5,5)]
         man_dist_center = min([abs(black_king_file - file) + abs(black_king_rank-rank) for file,rank in center_squares])
 
         manhattan_distance_kings = abs(black_king_file - white_king_file) + abs(black_king_rank-white_king_rank)
@@ -590,7 +585,7 @@ def evaluation_KBNK(env):
 
         manhattan_distance_kings = abs(black_king_file - white_king_file) + abs(black_king_rank-white_king_rank)
 
-        return man_dist_corner #10*man_dist_corner + 1.6*(14-manhattan_distance_kings) + 2*man_dist_center + 2*(8-moves_black)
+        return 10*man_dist_corner + 1.6*(14-manhattan_distance_kings) + 2*man_dist_center + 2*(8-moves_black)
 
 
 def legal_moves_smaller_board(squares, env):
